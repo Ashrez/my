@@ -29,6 +29,6 @@ COPY . /var/www
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 755 /var/www
 
-# Expose port 9000 and start php-fpm server
-EXPOSE 9000
-CMD ["php-fpm"]
+# Expose port 80 and start both services
+EXPOSE 80
+CMD service php8.2-fpm start && nginx -g 'daemon off;'
