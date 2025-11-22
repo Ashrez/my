@@ -44,6 +44,11 @@ return [
             'timeout' => 30,
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
         ],
+            'mailjet' => [
+                'transport' => 'mailjet',
+                'api_key' => env('MAILJET_API_KEY'),
+                'api_secret' => env('MAILJET_API_SECRET'),
+            ],
 
         'ses' => [
             'transport' => 'ses',

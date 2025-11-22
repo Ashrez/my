@@ -10,7 +10,9 @@
     use Illuminate\Support\Facades\Storage;
     use Illuminate\Support\Facades\File;
     use Illuminate\Support\Facades\Redirect;
-    use App\Services\ResendMailer;
+    use App\Services\ResendEmailService;
+    use App\Services\MailjetService;
+    use App\Mail\BookingTicketMail;
 
     class AdminController extends Controller
     {
@@ -215,35 +217,38 @@
         }
 
         // Kirim email tiket ke customer
-        public function sendTicketEmail($id)
-        {
-            try {
-                $booking = Booking::with(['tickets', 'film'])->findOrFail($id);
-                $testEmail = 'iwayanmarchel@gmail.com';
-                if (!filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
-                    return redirect()->route('admin.dashboard')->with('error', 'Email test tidak valid: ' . $testEmail);
+            public function sendTicketEmail($id)
+            {
+                try {
+                    $booking = Booking::with(['tickets', 'film'])->findOrFail($id);
+                    $testEmail = 'iwayanmarchel@gmail.com';
+                    if (!filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
+                        return redirect()->route('admin.dashboard')->with('error', 'Email test tidak valid: ' . $testEmail);
+                    }
+
+                    // Kirim email menggunakan MailjetService
+                    $mailjet = new MailjetService();
+                    $subject = 'Tiket Booking Anda';
+                    $seats = $booking->tickets->pluck('seat_number')->join(', ');
+                    $body = view('emails.booking_ticket', [
+                        'booking' => $booking,
+                        'seats' => $seats
+                    ])->render();
+                    $result = $mailjet->sendEmail($testEmail, $subject, $body);
+                    if ($result !== true) {
+                        $errorMsg = 'Gagal mengirim email via Mailjet.';
+                        if (is_array($result) && isset($result['Messages'][0]['Errors'][0]['ErrorMessage'])) {
+                            $errorMsg .= ' ' . $result['Messages'][0]['Errors'][0]['ErrorMessage'];
+                        }
+                        return redirect()->route('admin.dashboard')->with('error', $errorMsg);
+                    }
+
+                    return redirect()->route('admin.dashboard')->with('success', 'Email tiket dijadwalkan untuk dikirim ke ' . $testEmail);
+                } catch (\Exception $e) {
+                    \Log::error('Schedule email error: ' . $e->getMessage());
+                    return redirect()->route('admin.dashboard')->with('error', 'Gagal menjadwalkan email: ' . $e->getMessage());
                 }
-
-                // Render email HTML dari blade
-                $html = view('emails.booking-ticket', [
-                    'booking' => $booking,
-                    'seats' => $booking->tickets->pluck('seat_number')->join(', ')
-                ])->render();
-
-                $mailer = new ResendMailer();
-                $result = $mailer->send($testEmail, 'Tiket Booking Wibufest #' . $booking->id, $html);
-
-                if (isset($result['error'])) {
-                    \Log::error('Resend error: ' . $result['error']);
-                    return redirect()->route('admin.dashboard')->with('error', 'Gagal mengirim email: ' . $result['error']);
-                }
-
-                return redirect()->route('admin.dashboard')->with('success', 'Email tiket berhasil dikirim ke ' . $testEmail);
-            } catch (\Exception $e) {
-                \Log::error('Resend email error: ' . $e->getMessage());
-                return redirect()->route('admin.dashboard')->with('error', 'Gagal mengirim email: ' . $e->getMessage());
             }
-        }
 
         // Hapus semua booking & reset kursi + reset auto-increment
         public function clearAllBookings()

@@ -36,6 +36,10 @@ Route::prefix('admin')->middleware('admin.password')->group(function () {
 use App\Http\Controllers\TestEmailController;
 Route::post('/test-email', [TestEmailController::class, 'sendTest']);
 
+// Route untuk test email Mailjet
+use App\Http\Controllers\MailjetTestController;
+Route::post('/test-mailjet', [MailjetTestController::class, 'sendTestEmail']);
+
 // Fallback untuk URL yang tidak dikenal
 Route::fallback(function(){
     return redirect()->route('home');
