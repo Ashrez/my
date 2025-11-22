@@ -15,8 +15,6 @@ RUN apt-get update && apt-get install -y \
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd sockets
 
-# OpenSSL support (PENTING)
-RUN docker-php-ext-install openssl
 
 # Install Composer
 COPY --from=composer:2.5 /usr/bin/composer /usr/bin/composer
