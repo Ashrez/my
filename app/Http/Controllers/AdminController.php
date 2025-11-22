@@ -10,8 +10,7 @@
     use Illuminate\Support\Facades\Storage;
     use Illuminate\Support\Facades\File;
     use Illuminate\Support\Facades\Redirect;
-    use Illuminate\Support\Facades\Mail;
-    use App\Mail\BookingTicketMail;
+    use App\Services\ResendMailer;
 
     class AdminController extends Controller
     {
@@ -220,23 +219,29 @@
         {
             try {
                 $booking = Booking::with(['tickets', 'film'])->findOrFail($id);
-
-                // Email test
                 $testEmail = 'iwayanmarchel@gmail.com';
                 if (!filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
                     return redirect()->route('admin.dashboard')->with('error', 'Email test tidak valid: ' . $testEmail);
                 }
 
-                \Log::info('Queue driver in use: ' . config('queue.default'));
-                \Log::info('Queueing email to test address: ' . $testEmail);
+                // Render email HTML dari blade
+                $html = view('emails.booking-ticket', [
+                    'booking' => $booking,
+                    'seats' => $booking->tickets->pluck('seat_number')->join(', ')
+                ])->render();
 
-                Mail::to($testEmail)->send(new BookingTicketMail($booking));
+                $mailer = new ResendMailer();
+                $result = $mailer->send($testEmail, 'Tiket Booking Wibufest #' . $booking->id, $html);
 
-                return redirect()->route('admin.dashboard')->with('success', 'Email tiket dijadwalkan untuk dikirim ke ' . $testEmail);
+                if (isset($result['error'])) {
+                    \Log::error('Resend error: ' . $result['error']);
+                    return redirect()->route('admin.dashboard')->with('error', 'Gagal mengirim email: ' . $result['error']);
+                }
 
+                return redirect()->route('admin.dashboard')->with('success', 'Email tiket berhasil dikirim ke ' . $testEmail);
             } catch (\Exception $e) {
-                \Log::error('Schedule email error: ' . $e->getMessage());
-                return redirect()->route('admin.dashboard')->with('error', 'Gagal menjadwalkan email: ' . $e->getMessage());
+                \Log::error('Resend email error: ' . $e->getMessage());
+                return redirect()->route('admin.dashboard')->with('error', 'Gagal mengirim email: ' . $e->getMessage());
             }
         }
 
