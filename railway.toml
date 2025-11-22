@@ -5,3 +5,13 @@ builder = "NIXPACKS"
 startCommand = "bash start.sh"
 healthcheckPath = "/"
 healthcheckTimeout = 100
+
+# Service utama (web)
+[services.web]
+start = "bash start.sh"
+run = "web"
+
+# Worker untuk queue
+[services.worker]
+start = "php artisan queue:work --tries=3 --timeout=120"
+run = "worker"
