@@ -1,34 +1,23 @@
-# Dockerfile for Laravel app
-FROM php:8.2-fpm
+FROM php:8.2-cli
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
+    unzip \
+    libzip-dev \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
-    zip \
-    unzip \
     libssl-dev
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd sockets
+RUN docker-php-ext-install pdo_mysql mbstring bcmath zip sockets openssl
 
+COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 
-# Install Composer
-COPY --from=composer:2.5 /usr/bin/composer /usr/bin/composer
+WORKDIR /app
+COPY . .
 
-# Set working directory
-WORKDIR /var/www
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Copy project files
-COPY . /var/www
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 755 /var/www
-
-# Expose port 80 and start both services
-EXPOSE 80
-CMD service php8.2-fpm start && nginx -g 'daemon off;'
+CMD ["/start.sh"]
