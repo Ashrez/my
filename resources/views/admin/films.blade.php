@@ -286,27 +286,34 @@
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead class="bg-gray-50/50 dark:bg-gray-800/50">
-            <tr>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">ID</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Poster</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Judul</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Harga</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Status</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Aksi</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200/50 dark:divide-gray-700/50">
+        <form method="POST" action="{{ route('admin.films.delete-selected') }}" id="deleteSelectedForm">
+          @csrf
+          <table class="w-full">
+            <thead class="bg-gray-50/50 dark:bg-gray-800/50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  <input type="checkbox" id="selectAllFilms" onclick="toggleSelectAllFilms(this)">
+                </th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">ID</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Poster</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Judul</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Harga</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Aksi</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200/50 dark:divide-gray-700/50">
             @forelse($films as $f)
             <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
-              <form method="POST" action="{{ route('admin.films.update') }}" class="contents">
-                @csrf
-                <input type="hidden" name="id" value="{{ $f->id }}">
-
-                <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
-                  #{{ $f->id }}
+                <td class="px-4 py-3">
+                  <input type="checkbox" name="film_ids[]" value="{{ $f->id }}" class="film-checkbox">
                 </td>
+                <form method="POST" action="{{ route('admin.films.update') }}" class="contents">
+                  @csrf
+                  <input type="hidden" name="id" value="{{ $f->id }}">
+                  <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                    #{{ $f->id }}
+                  </td>
 
                 <td class="px-4 py-3">
                   @if($f->poster)
@@ -347,7 +354,7 @@
                     </svg>
                     Update
                   </button>
-              </form>
+                </form>
                   <form method="POST" action="{{ route('admin.films.delete', $f->id) }}" style="display:inline" onsubmit="return confirm('Hapus film ini? Semua tiket terkait akan dihapus!')">
                     @csrf
                     <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium">
@@ -370,8 +377,33 @@
               </td>
             </tr>
             @endforelse
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+          <div class="flex gap-2 mt-4">
+            <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors text-sm font-medium" onclick="return confirm('Hapus film terpilih? Semua tiket terkait akan dihapus!')">
+              <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Hapus Film Terpilih
+            </button>
+          </form>
+            <form method="POST" action="{{ route('admin.films.delete-all') }}" style="display:inline" onsubmit="return confirm('Hapus semua film? Semua tiket dan poster akan dihapus!')">
+              @csrf
+              <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-700 hover:bg-red-800 text-white rounded-lg transition-colors text-sm font-medium">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Hapus Semua Film
+              </button>
+            </form>
+          </div>
+          // Checkbox select all
+          function toggleSelectAllFilms(source) {
+            const checkboxes = document.querySelectorAll('.film-checkbox');
+            for (const cb of checkboxes) {
+              cb.checked = source.checked;
+            }
+          }
       </div>
     </div>
   </div>

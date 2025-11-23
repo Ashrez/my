@@ -29,6 +29,8 @@ Route::prefix('admin')->middleware('admin.password')->group(function () {
     Route::post('/films/store', [AdminController::class, 'storeFilm'])->name('admin.films.store');
     Route::post('/films/update', [AdminController::class,'updateFilm'])->name('admin.films.update');
     Route::post('/films/{id}/delete', [AdminController::class, 'deleteFilm'])->name('admin.films.delete');
+    Route::post('/films/delete-selected', [AdminController::class, 'deleteSelectedFilms'])->name('admin.films.delete-selected');
+    Route::post('/films/delete-all', [AdminController::class, 'deleteAllFilms'])->name('admin.films.delete-all');
 });
 
 

@@ -16,6 +16,68 @@
 
     class AdminController extends Controller
     {
+        // Hapus film terpilih (checkbox)
+        public function deleteSelectedFilms(Request $r)
+        {
+            $ids = $r->input('film_ids', []);
+            if (!is_array($ids) || empty($ids)) {
+                return back()->with('error', 'Pilih film yang ingin dihapus.');
+            }
+            try {
+                DB::transaction(function() use ($ids) {
+                    foreach ($ids as $id) {
+                        $film = Film::find($id);
+                        if ($film) {
+                            // Hapus poster jika tidak digunakan film lain
+                            if ($film->poster && file_exists(public_path($film->poster))) {
+                                $otherFilmsWithSamePoster = Film::where('id', '!=', $id)
+                                    ->where('poster', $film->poster)
+                                    ->exists();
+                                if (!$otherFilmsWithSamePoster) {
+                                    unlink(public_path($film->poster));
+                                }
+                            }
+                            Ticket::where('film_id', $id)->delete();
+                            $film->delete();
+                        }
+                    }
+                    // Reset auto-increment jika tidak ada film lagi
+                    if (Film::count() === 0) {
+                        DB::statement('ALTER TABLE films AUTO_INCREMENT = 1');
+                    }
+                });
+                return back()->with('success', 'Film terpilih berhasil dihapus.');
+            } catch (\Exception $e) {
+                \Log::error('Error deleting selected films: ' . $e->getMessage());
+                return back()->with('error', 'Gagal menghapus film terpilih: ' . $e->getMessage());
+            }
+        }
+
+        // Hapus semua film
+        public function deleteAllFilms()
+        {
+            try {
+                DB::transaction(function() {
+                    foreach (Film::all() as $film) {
+                        if ($film->poster && file_exists(public_path($film->poster))) {
+                            $otherFilmsWithSamePoster = Film::where('id', '!=', $film->id)
+                                ->where('poster', $film->poster)
+                                ->exists();
+                            if (!$otherFilmsWithSamePoster) {
+                                unlink(public_path($film->poster));
+                            }
+                        }
+                        Ticket::where('film_id', $film->id)->delete();
+                        $film->delete();
+                    }
+                    DB::statement('ALTER TABLE films AUTO_INCREMENT = 1');
+                });
+                return back()->with('success', 'Semua film berhasil dihapus.');
+            } catch (\Exception $e) {
+                \Log::error('Error deleting all films: ' . $e->getMessage());
+                return back()->with('error', 'Gagal menghapus semua film: ' . $e->getMessage());
+            }
+        }
         // Login form
         public function loginForm()
         {
