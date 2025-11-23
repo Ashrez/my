@@ -98,6 +98,11 @@
         </div>
       </div>
 
+      <!-- Keterangan Email -->
+      <div class="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-300 dark:border-yellow-800 rounded-lg text-yellow-900 dark:text-yellow-200 text-sm">
+        <strong>Keterangan:</strong> Setelah booking selesai, Anda akan menerima email konfirmasi maksimal H+3. Silakan cek juga di bagian <strong>Gmail &gt; Spam</strong> secara berkala jika email belum masuk ke inbox.
+      </div>
+
       <!-- Seat Map -->
       <div class="glass-card">
         <h2 class="text-lg font-semibold mb-4">Denah Kursi</h2>
@@ -167,7 +172,7 @@
           <div class="text-center">
             <p class="text-sm font-medium mb-3">Scan QR Code untuk Bayar</p>
             <div class="inline-block p-3 bg-white rounded-xl shadow-lg">
-              <img src="{{ asset('images/qrcode.jpg') }}" alt="QR Payment" class="w-64 h-auto rounded-lg">
+              <img src="{{ asset('images/qrcode1.jpg') }}" alt="QR Payment" class="w-64 h-auto rounded-lg">
             </div>
           </div>
         </div>
@@ -211,7 +216,7 @@
       function update(){
         const selectedSeats = [...select.selectedOptions];
         const count = selectedSeats.length;
-        
+
         // Hitung total dengan harga 2x untuk couple seat
         let total = 0;
         selectedSeats.forEach(option => {
@@ -223,7 +228,7 @@
             total += pricePerSeat;
           }
         });
-        
+
         info.textContent = count ? `Terpilih ${count} kursi — Total: ${formatCurrency(total)}` : 'Total: -';
       }
 
@@ -243,14 +248,14 @@
         fileSuccess.classList.add('hidden');
         submitBtn.disabled = true;
       }
-      
+
       function showFileSuccess(msg){
         fileSuccess.textContent = msg;
         fileSuccess.classList.remove('hidden');
         fileError.classList.add('hidden');
         submitBtn.disabled = false;
       }
-      
+
       function clearFileError(){
         fileError.textContent = '';
         fileError.classList.add('hidden');
@@ -263,28 +268,28 @@
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.readAsDataURL(file);
-          
+
           reader.onload = (e) => {
             const img = new Image();
             img.src = e.target.result;
-            
+
             img.onload = () => {
               const canvas = document.createElement('canvas');
               let width = img.width;
               let height = img.height;
-              
+
               // Resize jika terlalu besar
               if (width > maxWidth) {
                 height = (height * maxWidth) / width;
                 width = maxWidth;
               }
-              
+
               canvas.width = width;
               canvas.height = height;
-              
+
               const ctx = canvas.getContext('2d');
               ctx.drawImage(img, 0, 0, width, height);
-              
+
               // Convert to blob dengan kompresi
               canvas.toBlob(
                 (blob) => {
@@ -298,10 +303,10 @@
                 quality
               );
             };
-            
+
             img.onerror = () => reject(new Error('Gagal load gambar'));
           };
-          
+
           reader.onerror = () => reject(new Error('Gagal membaca file'));
         });
       }
@@ -310,50 +315,50 @@
         fileInput.addEventListener('change', async () => {
           clearFileError();
           if (!fileInput.files || !fileInput.files[0]) return;
-          
+
           const file = fileInput.files[0];
           console.log('Original file:', file.name, 'Size:', (file.size / 1024 / 1024).toFixed(2) + ' MB');
-          
+
           // Validasi tipe file
           if (!file.type.startsWith('image/')) {
             showFileError('File harus berupa gambar (JPG, PNG, JPEG)');
             fileInput.value = '';
             return;
           }
-          
+
           try {
             // Tampilkan loading
             showFileSuccess('⏳ Mengkompress gambar...');
             submitBtn.disabled = true;
-            
+
             // Compress image
             const compressedBlob = await compressImage(file);
             console.log('Compressed size:', (compressedBlob.size / 1024 / 1024).toFixed(2) + ' MB');
-            
+
             // Validasi ukuran setelah kompresi (max 5MB)
             if (compressedBlob.size > 5 * 1024 * 1024) {
               showFileError('Gambar terlalu besar. Coba gambar dengan resolusi lebih kecil.');
               fileInput.value = '';
               return;
             }
-            
+
             // Simpan ukuran asli untuk display
             const originalSize = (file.size / 1024 / 1024).toFixed(2);
             const compressedSize = (compressedBlob.size / 1024 / 1024).toFixed(2);
-            
+
             showFileSuccess(`✓ Gambar dikompres: ${originalSize} MB → ${compressedSize} MB`);
-            
+
             // Create new File object dari blob
             const compressedFile = new File([compressedBlob], file.name, {
               type: 'image/jpeg',
               lastModified: Date.now()
             });
-            
+
             // Replace file input dengan compressed file
             const dataTransfer = new DataTransfer();
             dataTransfer.items.add(compressedFile);
             fileInput.files = dataTransfer.files;
-            
+
           } catch (error) {
             console.error('Compression error:', error);
             showFileError('Gagal mengkompress gambar. Silakan coba lagi.');
@@ -371,21 +376,21 @@
             alert('Pilih minimal 1 kursi!');
             return false;
           }
-          
+
           // Validasi file
           if (!fileInput.files || !fileInput.files[0]) {
             e.preventDefault();
             alert('Upload bukti pembayaran!');
             return false;
           }
-          
+
           // Validasi ukuran maksimal 5MB setelah kompresi
           if (fileInput.files[0].size > 5 * 1024 * 1024) {
             e.preventDefault();
             showFileError('File terlalu besar setelah kompresi. Silakan pilih gambar lain.');
             return false;
           }
-          
+
           // Show loading
           submitBtn.disabled = true;
           submitBtn.innerHTML = '⏳ Mengirim booking...';
