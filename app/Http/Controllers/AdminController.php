@@ -221,9 +221,9 @@
             {
                 try {
                     $booking = Booking::with(['tickets', 'film'])->findOrFail($id);
-                    $testEmail = 'iwayanmarchel@gmail.com';
-                    if (!filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
-                        return redirect()->route('admin.dashboard')->with('error', 'Email test tidak valid: ' . $testEmail);
+                    $customerEmail = $booking->email;
+                    if (!filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
+                        return redirect()->route('admin.dashboard')->with('error', 'Email customer tidak valid: ' . $customerEmail);
                     }
 
                     // Kirim email menggunakan MailjetService
@@ -234,7 +234,7 @@
                         'booking' => $booking,
                         'seats' => $seats
                     ])->render();
-                    $result = $mailjet->sendEmail($testEmail, $subject, $body);
+                    $result = $mailjet->sendEmail($customerEmail, $subject, $body);
                     if ($result !== true) {
                         $errorMsg = 'Gagal mengirim email via Mailjet.';
                         if (is_array($result) && isset($result['Messages'][0]['Errors'][0]['ErrorMessage'])) {
@@ -243,7 +243,7 @@
                         return redirect()->route('admin.dashboard')->with('error', $errorMsg);
                     }
 
-                    return redirect()->route('admin.dashboard')->with('success', 'Email tiket dijadwalkan untuk dikirim ke ' . $testEmail);
+                    return redirect()->route('admin.dashboard')->with('success', 'Email tiket dijadwalkan untuk dikirim ke ' . $customerEmail);
                 } catch (\Exception $e) {
                     \Log::error('Schedule email error: ' . $e->getMessage());
                     return redirect()->route('admin.dashboard')->with('error', 'Gagal menjadwalkan email: ' . $e->getMessage());
